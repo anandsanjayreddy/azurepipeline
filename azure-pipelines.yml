@@ -24,15 +24,15 @@ parameters:
     default: ''
 # Variables used in the pipeline that pulled fom CommonConstants Library
 variables:
-  - template: teledentistry/CommonConstants.yml@helpers
+  - template: CommonConstants.yml@helpers
     parameters:
       module: ${{ parameters.module }}
 # Initalise
 steps:
 - bash: 
     echo "Selected module - ${{ parameters.module }}"
-- template: teledentistry/InstallSSHKey.yml@helpers    
-- template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+- template: InstallSSHKey.yml@helpers    
+- template: GetSource.yml@helpers      #Using the Getsource library
   parameters:
     branch: ${{ variables.dev_branch }}
     gitUrl: ${{ variables.gitUrl }}
@@ -48,26 +48,25 @@ steps:
       releaseBranchName='release-'$releaseVersion
       echo $releaseBranchName
       echo "##vso[task.setvariable variable=releaseBranchName]$releaseBranchName"
-    name: mystep
 - ${{ if eq(parameters.branchName, '') }}:
-  - template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+  - template: GetSource.yml@helpers      #Using the Getsource library
     parameters:
       branch: $(releaseBranchName)
       gitUrl: ${{ variables.gitUrl }}
 - ${{ if not(eq(parameters.branchName, '')) }}:
-  - template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+  - template: GetSource.yml@helpers      #Using the Getsource library
     parameters:
       branch: ${{ parameters.branchName }}
       gitUrl: ${{ variables.gitUrl }}
 - bash: 
     echo Merging release to master.
 - ${{ if eq(parameters.branchName, '') }}:
-  - template: teledentistry/Merge.yml@helpers        #Using the Merge library
+  - template: Merge.yml@helpers        #Using the Merge library
     parameters:
       source: $(releaseBranchName)
       destination: ${{ variables.master_branch }}
 - ${{ if not(eq(parameters.branchName, '')) }}:
-  - template: teledentistry/Merge.yml@helpers        #Using the Merge library
+  - template: Merge.yml@helpers        #Using the Merge library
     parameters:
       source: ${{ parameters.branchName }}
       destination: ${{ variables.master_branch }} 
