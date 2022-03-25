@@ -13,6 +13,7 @@ resources:
     - repository: helpers
       type: github
       name: anandsanjayreddy/buildlibrary
+      endpoint: github.com_anandsanjayreddy
 # Parameters to be give while running the pipeline
 parameters:
   - name: module
