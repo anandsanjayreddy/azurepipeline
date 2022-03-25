@@ -1,0 +1,75 @@
+trigger:
+- main
+
+#pool:
+#  name: Default
+
+pool:
+  vmImage: ubuntu-latest
+
+# Include the repo of the helper and CommonConstants libraries
+resources:
+  repositories:
+    - repository: helpers
+      type: git
+      name: Build-Library/Build-Library
+# Parameters to be give while running the pipeline
+parameters:
+  - name: module
+    type: string
+    default: ''
+  - name: branchName
+    type: string
+    default: ''
+# Variables used in the pipeline that pulled fom CommonConstants Library
+variables:
+  - template: teledentistry/CommonConstants.yml@helpers
+    parameters:
+      module: ${{ parameters.module }}
+# Initalise
+steps:
+- bash: 
+    echo "Selected module - ${{ parameters.module }}"
+- template: teledentistry/InstallSSHKey.yml@helpers    
+- template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+  parameters:
+    branch: ${{ variables.dev_branch }}
+    gitUrl: ${{ variables.gitUrl }}
+- task: CmdLine@2
+  inputs:
+    script: |
+      version=`jq .version ./azurepipelinetesting/package.json | tr -d '"'`;
+      IFS='.' 
+      read -ra versionarray <<< $version
+      reducedMinorVer=$(expr ${versionarray[1]} - 1)
+      IFS=''
+      releaseVersion="${versionarray[0]}.$reducedMinorVer"
+      releaseBranchName='release-'$releaseVersion
+      echo $releaseBranchName
+      echo "##vso[task.setvariable variable=releaseBranchName]$releaseBranchName"
+    name: mystep
+- ${{ if eq(parameters.branchName, '') }}:
+  - template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+    parameters:
+      branch: $(releaseBranchName)
+      gitUrl: ${{ variables.gitUrl }}
+- ${{ if not(eq(parameters.branchName, '')) }}:
+  - template: teledentistry/GetSource.yml@helpers      #Using the Getsource library
+    parameters:
+      branch: ${{ parameters.branchName }}
+      gitUrl: ${{ variables.gitUrl }}
+- bash: 
+    echo Merging release to master.
+- ${{ if eq(parameters.branchName, '') }}:
+  - template: teledentistry/Merge.yml@helpers        #Using the Merge library
+    parameters:
+      source: $(releaseBranchName)
+      destination: ${{ variables.master_branch }}
+- ${{ if not(eq(parameters.branchName, '')) }}:
+  - template: teledentistry/Merge.yml@helpers        #Using the Merge library
+    parameters:
+      source: ${{ parameters.branchName }}
+      destination: ${{ variables.master_branch }} 
+- bash:
+    cd ./azurepipelinetesting;
+    git push origin -u ${{ variables.master_branch }}
