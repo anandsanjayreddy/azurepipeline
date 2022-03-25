@@ -11,8 +11,8 @@ pool:
 resources:
   repositories:
     - repository: helpers
-      type: git
-      name: Build-Library/Build-Library
+      type: github
+      name: anandsanjayreddy/buildlibrary
 # Parameters to be give while running the pipeline
 parameters:
   - name: module
