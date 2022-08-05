@@ -15,22 +15,14 @@ resources:
       name: anandsanjayreddy/buildlibrary
       endpoint: github.com_anandsanjayreddy
 # Parameters to be give while running the pipeline
-parameters:
-  - name: module
-    type: string
-    default: ''
-  - name: branchName
-    type: string
-    default: ''
+
 # Variables used in the pipeline that pulled fom CommonConstants Library
 variables:
   - template: CommonConstants.yml@helpers
-    parameters:
-      module: ${{ parameters.module }}
 # Initalise
 steps:
 - bash: 
-    echo "Selected module - ${{ parameters.module }}"
+    echo "Selected module - ${{ variables.module }}"
 - template: InstallSSHKey.yml@helpers    
 - template: GetSource.yml@helpers      #Using the Getsource library
   parameters:
@@ -48,27 +40,27 @@ steps:
       releaseBranchName='release-'$releaseVersion
       echo $releaseBranchName
       echo "##vso[task.setvariable variable=releaseBranchName]$releaseBranchName"
-- ${{ if eq(parameters.branchName, '') }}:
+- ${{ if eq(variables.branchName, '') }}:
   - template: GetSource.yml@helpers      #Using the Getsource library
     parameters:
       branch: $(releaseBranchName)
       gitUrl: ${{ variables.gitUrl }}
-- ${{ if not(eq(parameters.branchName, '')) }}:
+- ${{ if not(eq(variables.branchName, '')) }}:
   - template: GetSource.yml@helpers      #Using the Getsource library
     parameters:
-      branch: ${{ parameters.branchName }}
+      branch: ${{ variables.branchName }}
       gitUrl: ${{ variables.gitUrl }}
 - bash: 
     echo Merging release to master.
-- ${{ if eq(parameters.branchName, '') }}:
+- ${{ if eq(variables.branchName, '') }}:
   - template: Merge.yml@helpers        #Using the Merge library
     parameters:
       source: $(releaseBranchName)
       destination: ${{ variables.master_branch }}
-- ${{ if not(eq(parameters.branchName, '')) }}:
+- ${{ if not(eq(variables.branchName, '')) }}:
   - template: Merge.yml@helpers        #Using the Merge library
     parameters:
-      source: ${{ parameters.branchName }}
+      source: ${{ variables.branchName }}
       destination: ${{ variables.master_branch }} 
 - bash:
     cd ./azurepipelinetesting;
